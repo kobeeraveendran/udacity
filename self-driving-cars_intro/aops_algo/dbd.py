@@ -31,14 +31,29 @@ def days_between_dates(month1, day1, year1, month2, day2, year2):
         if month1 == month2:
             return day2 - day1
 
-        if leap_year(year1):
-            days -= 1
-
     else:
-        days += month_diff(month1, day1, month2, day2)
+        num_leap_years = 0
+
+        for year in range(year1 + 1, year2):
+            if leap_year(year):
+                num_leap_years += 1
+
+        if leap_year(year1) and month1 <= 1:
+            num_leap_years += 1
+
+        if leap_year(year2) and month2 > 1:
+            num_leap_years += 1
+
+        days += num_leap_years
+
+        if year2 - year1 > 1:
+            days += (year2 - year1 - 1) * 365
 
     
     days += month_diff(month1, day1, month2, day2)
+
+
+    # old
 
     #days += (year2 - year1) * 365
     if (month2 - 1 % 12) != month1 and month1 != month2:
