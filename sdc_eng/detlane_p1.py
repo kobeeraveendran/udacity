@@ -85,29 +85,62 @@ def draw_lines(image, lines, color = [255, 0, 0], thickness = 2):
     top = (450, 330, 490, 330)
     bottom = (0, image.shape[0], image.shape[1], image.shape[0])
 
+    # separate lines by left and right to aggregate into two final lines, one per side
+    left_lines = []
+    right_lines = []
+
     for line in lines:
         
         for x1, y1, x2, y2 in line:
             slope = (y2 - y1) / (x2 - x1) if x2 - x1 != 0 else np.inf
 
             # only include lines that have slopes characteristic of typical lane lines
-            if (slope < 5 and slope > 0.5) or (slope > -5 and slope < -0.5):
 
-                # find intersections with the "top" and "bottom" of the lane to extend the detected lines
-                top_intersect = point_of_intersection((x1, y1, x2, y2), top)
-                bot_intersect = point_of_intersection((x1, y1, x2, y2), bottom)
+            # points seem to be ordered left to right, so...
 
-                # draw lines using the new "extended" version
-                cv2.line(image, top_intersect, bot_intersect, color, thickness)
-                #cv2.line(image, (x1, y1), (x2, y2), color, thickness)
+            # left lines have a positive slope
+            if slope < 5 and slope > 0.5:
+                left_lines.append((x1, y1, x2, y2))
+
+            # while right lines have a negative slope
+            if slope > -5 and slope < -0.5:
+                right_lines.append((x1, y1, x2, y2))
+
+    num_left = len(left_lines)
+    num_right = len(right_lines)
+
+    avg_left = [k // num_left for k in [sum(x) for x in zip(*left_lines)]]
+    avg_right = [k // num_right for k in [sum(x) for x in zip(*right_lines)]]
+
+    #print(len(avg_left))
+    #print(len(avg_right))
+
+    # find intersections with the "top" and "bottom" of the lane to extend the detected lines
+
+    for line in [avg_left, avg_right]:
+
+        top_intersect = point_of_intersection(tuple(line), top)
+        bot_intersect = point_of_intersection(tuple(line), bottom)
+
+        print("Intersection with top: ", top_intersect)
+        print("Intersection with bottom: ", bot_intersect)
+
+        cv2.line(image, top_intersect, bot_intersect, color, thickness)
+
+    #top_intersect_left = point_of_intersection((x1, y1, x2, y2), top)
+    #bot_intersect = point_of_intersection((x1, y1, x2, y2), bottom)
+
+    # draw lines using the new "extended" version
+    #cv2.line(image, top_intersect, bot_intersect, color, thickness)
+    #cv2.line(image, (x1, y1), (x2, y2), color, thickness)
 
 def hough_transform(image, rho, theta, threshold, min_line_len, max_line_gap):
 
     lines = cv2.HoughLinesP(image, rho, theta, threshold, np.array([]), minLineLength = min_line_len, maxLineGap = max_line_gap)
     line_image = np.zeros((image.shape[0], image.shape[1], 3), dtype = np.uint8)
-    draw_lines(line_image, lines)
+    draw_lines(line_image, lines, thickness = 15)
 
-    return line_image, lines
+    return line_image
 
 def weighted_image(image, initial_image, alpha = 0.8, beta = 1., gamma = 0.0):
 
@@ -129,7 +162,7 @@ def detect_lane_lines(image):
 
     masked_edges = region_of_interest(edges, mask_vertices)
 
-    line_image, lines = hough_transform(masked_edges, rho = 1, theta = np.pi / 180, threshold = 15, min_line_len = 40, max_line_gap = 20)
+    line_image = hough_transform(masked_edges, rho = 1, theta = np.pi / 180, threshold = 15, min_line_len = 40, max_line_gap = 20)
 
     color_image_with_lines = weighted_image(line_image, image)
 
@@ -153,9 +186,15 @@ if __name__ == "__main__":
     # for image in os.listdir(image_dir):
     #     detect_lane_lines(mpimg.imread(image_dir + image))
 
-    #detect_lane_lines(image_dir + "solidWhiteCurve.jpg")
+    # for image in os.listdir(image_dir):
+    #     plt.imshow(detect_lane_lines(mpimg.imread(image_dir + image)))
+    #     plt.show()
 
-    white_output = "white.mp4"
-    clip1 = VideoFileClip(vid_dir + "solidWhiteRight.mp4")
-    white_clip = clip1.fl_image(detect_lane_lines)
-    white_clip.write_videofile(white_output, audio = False)
+    
+    plt.imshow(detect_lane_lines(mpimg.imread(image_dir + "solidWhiteCurve.jpg")))
+    plt.show()
+
+    # white_output = "white.mp4"
+    # clip1 = VideoFileClip(vid_dir + "solidWhiteRight.mp4")
+    # white_clip = clip1.fl_image(detect_lane_lines)
+    # white_clip.write_videofile(white_output, audio = False)
