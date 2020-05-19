@@ -41,16 +41,57 @@ def region_of_interest(image, vertices):
 
     return masked_image
 
+def point_of_intersection(line1, line2):
+
+    x1, y1, x2, y2 = line1
+    x3, y3, x4, y4 = line2
+
+    a1 = y2 - y1
+    b1 = x1 - x2
+    c1 = a1 * x1 + b1 * y1
+
+    a2 = y4 - y3
+    b2 = x3 - x4
+    c2 = a2 * x3 + b2 * y3
+
+    det = a1 * b2 - a2 * b1
+
+    if det != 0:
+        x = (b2 * c1 - b1 * c2) / det
+        y = (a1 * c2 - a2 * c1) / det
+
+        return (x, y)
+
+    else:
+        # lines are parallel
+        return (np.inf, np.inf)
+
 def draw_lines(image, lines, color = [255, 0, 0], thickness = 2):
 
     for line in lines:
         
         for x1, y1, x2, y2 in line:
-            cv2.line(image, (x1, y1), (x2, y2), color, thickness)
+            slope = (y2 - y1) / (x2 - x1) if x2 - x1 != 0 else np.inf
+
+            # only include lines that have slopes characteristic of typical lane lines
+            if (slope < 5 and slope > 0.5) or (slope > -5 and slope < -0.5):
+
+                # identify left and right lane lines
+                # point order seems to be consistently left-to-right
+                # so, positive slope = left lane line, negative slope = right lane line
+
+                # find intersections with the "top" and "bottom" of the lane to extend the line
+
+
+                
+                cv2.line(image, (x1, y1), (x2, y2), color, thickness)
 
 def hough_transform(image, rho, theta, threshold, min_line_len, max_line_gap):
 
     lines = cv2.HoughLinesP(image, rho, theta, threshold, np.array([]), minLineLength = min_line_len, maxLineGap = max_line_gap)
+
+    print(lines)
+    print('\n\n\n')
     line_image = np.zeros((image.shape[0], image.shape[1], 3), dtype = np.uint8)
     draw_lines(line_image, lines)
 
@@ -99,3 +140,5 @@ if __name__ == "__main__":
     # run basic lane detection on images
     for image in os.listdir(image_dir):
         detect_lane_lines(image_dir + image)
+
+    #detect_lane_lines(image_dir + "solidWhiteCurve.jpg")
