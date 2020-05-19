@@ -120,8 +120,6 @@ def detect_lane_lines(image):
 
     img_dims = image.shape
 
-    print("Image dims: ", img_dims)
-
     gray = grayscale(image)
     gray_blur = gaussian_blur(image, kernel_size = 5)
 
