@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 
 import os
+import sys
 
 base_dir = "CarND-LaneLines-P1/"
 
@@ -41,7 +42,16 @@ def region_of_interest(image, vertices):
 
     return masked_image
 
+# point of intersection of two lines using their 4 constituent points
 def point_of_intersection(line1, line2):
+
+    '''
+    args:
+        line1 and line2: 4-tuple representing a line, of the form (x1, y1, x2, y2)
+
+    returns:
+        (x, y): point of intersection of the two lines. If parallel, returns infinity
+    '''
 
     x1, y1, x2, y2 = line1
     x3, y3, x4, y4 = line2
@@ -60,13 +70,20 @@ def point_of_intersection(line1, line2):
         x = (b2 * c1 - b1 * c2) / det
         y = (a1 * c2 - a2 * c1) / det
 
-        return (x, y)
+        return (int(x), int(y))
 
     else:
         # lines are parallel
-        return (np.inf, np.inf)
+        # returns this instead of np.inf since integer values are expected for point coordinates
+        return (sys.maxsize, sys.maxsize)
+
 
 def draw_lines(image, lines, color = [255, 0, 0], thickness = 2):
+
+    # create lines of the top and bottom of the lane
+    # NOTE: remember to generalize this later to work on images of various sizes
+    top = (450, 330, 490, 330)
+    bottom = (0, image.shape[0], image.shape[1], image.shape[0])
 
     for line in lines:
         
@@ -76,22 +93,17 @@ def draw_lines(image, lines, color = [255, 0, 0], thickness = 2):
             # only include lines that have slopes characteristic of typical lane lines
             if (slope < 5 and slope > 0.5) or (slope > -5 and slope < -0.5):
 
-                # identify left and right lane lines
-                # point order seems to be consistently left-to-right
-                # so, positive slope = left lane line, negative slope = right lane line
+                # find intersections with the "top" and "bottom" of the lane to extend the detected lines
+                top_intersect = point_of_intersection((x1, y1, x2, y2), top)
+                bot_intersect = point_of_intersection((x1, y1, x2, y2), bottom)
 
-                # find intersections with the "top" and "bottom" of the lane to extend the line
-
-
-                
-                cv2.line(image, (x1, y1), (x2, y2), color, thickness)
+                # draw lines using the new "extended" version
+                cv2.line(image, top_intersect, bot_intersect, color, thickness)
+                #cv2.line(image, (x1, y1), (x2, y2), color, thickness)
 
 def hough_transform(image, rho, theta, threshold, min_line_len, max_line_gap):
 
     lines = cv2.HoughLinesP(image, rho, theta, threshold, np.array([]), minLineLength = min_line_len, maxLineGap = max_line_gap)
-
-    print(lines)
-    print('\n\n\n')
     line_image = np.zeros((image.shape[0], image.shape[1], 3), dtype = np.uint8)
     draw_lines(line_image, lines)
 
@@ -104,9 +116,8 @@ def weighted_image(image, initial_image, alpha = 0.8, beta = 1., gamma = 0.0):
 
 
 # lane detection pipeline
-def detect_lane_lines(input_image):
+def detect_lane_lines(image):
 
-    image = mpimg.imread(input_image)
     img_dims = image.shape
 
     print("Image dims: ", img_dims)
@@ -128,17 +139,25 @@ def detect_lane_lines(input_image):
     #plt.imshow(image)
     #plt.show()
 
-    print("Detected lines: ")
-    plt.imshow(color_image_with_lines)
-    plt.show()
+    #print("Detected lines: ")
+    #plt.imshow(color_image_with_lines)
+    #plt.show()
 
     return color_image_with_lines
+
+from moviepy.editor import VideoFileClip
+from IPython.display import HTML
 
 
 if __name__ == "__main__":
 
     # run basic lane detection on images
-    for image in os.listdir(image_dir):
-        detect_lane_lines(image_dir + image)
+    # for image in os.listdir(image_dir):
+    #     detect_lane_lines(mpimg.imread(image_dir + image))
 
     #detect_lane_lines(image_dir + "solidWhiteCurve.jpg")
+
+    white_output = "white.mp4"
+    clip1 = VideoFileClip(vid_dir + "solidWhiteRight.mp4")
+    white_clip = clip1.fl_image(detect_lane_lines)
+    white_clip.write_videofile(white_output, audio = False)
