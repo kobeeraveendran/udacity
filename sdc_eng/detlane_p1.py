@@ -122,11 +122,10 @@ def draw_lines(image, lines, color = [255, 0, 0], thickness = 2):
         if len(line) == 4:
             top_intersect = point_of_intersection(tuple(line), top)
             bot_intersect = point_of_intersection(tuple(line), bottom)
+            cv2.line(image, top_intersect, bot_intersect, color, thickness)
 
-        # print("Intersection with top: ", top_intersect)
-        # print("Intersection with bottom: ", bot_intersect)
-
-        cv2.line(image, top_intersect, bot_intersect, color, thickness)
+            # print("Intersection with top: ", top_intersect)
+            # print("Intersection with bottom: ", bot_intersect)
 
     #top_intersect_left = point_of_intersection((x1, y1, x2, y2), top)
     #bot_intersect = point_of_intersection((x1, y1, x2, y2), bottom)
@@ -139,7 +138,7 @@ def hough_transform(image, rho, theta, threshold, min_line_len, max_line_gap):
 
     lines = cv2.HoughLinesP(image, rho, theta, threshold, np.array([]), minLineLength = min_line_len, maxLineGap = max_line_gap)
     line_image = np.zeros((image.shape[0], image.shape[1], 3), dtype = np.uint8)
-    draw_lines(line_image, lines, thickness = 10)
+    draw_lines(line_image, lines, thickness = 15)
 
     return line_image
 
@@ -155,9 +154,9 @@ def detect_lane_lines(image):
     img_dims = image.shape
 
     gray = grayscale(image)
-    gray_blur = gaussian_blur(image, kernel_size = 5)
+    gray_blur = gaussian_blur(gray, kernel_size = 5)
 
-    edges = canny(image, low_threshold = 50, high_threshold = 150)
+    edges = canny(gray_blur, low_threshold = 50, high_threshold = 150)
 
     mask_vertices = np.array([[(0, img_dims[0]), (450, 330), (490, 330), (img_dims[1], img_dims[0])]], dtype = np.int32)
 
@@ -184,8 +183,6 @@ from IPython.display import HTML
 if __name__ == "__main__":
 
     # run basic lane detection on images
-    # for image in os.listdir(image_dir):
-    #     detect_lane_lines(mpimg.imread(image_dir + image))
 
     # for image in os.listdir(image_dir):
     #     plt.imshow(detect_lane_lines(mpimg.imread(image_dir + image)))
@@ -195,7 +192,12 @@ if __name__ == "__main__":
     # plt.imshow(detect_lane_lines(mpimg.imread(image_dir + "solidWhiteCurve.jpg")))
     # plt.show()
 
-    white_output = "white.mp4"
-    clip1 = VideoFileClip(vid_dir + "solidWhiteRight.mp4")
-    white_clip = clip1.fl_image(detect_lane_lines)
-    white_clip.write_videofile(white_output, audio = False)
+    # white_output = "white.mp4"
+    # clip1 = VideoFileClip(vid_dir + "solidWhiteRight.mp4")
+    # white_clip = clip1.fl_image(detect_lane_lines)
+    # white_clip.write_videofile(white_output, audio = False)
+
+    for video in os.listdir(vid_dir):
+        clip = VideoFileClip(vid_dir + video)
+        vid = clip.fl_image(detect_lane_lines)
+        vid.write_videofile(video[:-4] + "_annotated.mp4", audio = False)
