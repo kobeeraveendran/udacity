@@ -16,9 +16,7 @@
 
 [end_result]: ./assets/end_result.jpg "Final output of the lane detection pipeline"
 
-## Project Report
-
-### Pipeline Overview
+## Pipeline Overview
 
 My lane detection pipeline consists of several major steps, each operating on single images. For video intake, the entire pipeline is simply run on individual frames in sequence.
 
