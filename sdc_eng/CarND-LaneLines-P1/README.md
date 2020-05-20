@@ -12,7 +12,9 @@
 
 [hough_transform_extended]: ./assets/hough_transform_extended.jpg "Hough transform extended to meet ends of the lane"
 
+[hough_transform_complete]: ./assets/hough_transform_complete.jpg "Complete Hough transform with averaged lane lines"
 
+[end_result]: ./assets/end_result.jpg "Final output of the lane detection pipeline"
 
 ## Project Report
 
@@ -73,4 +75,26 @@ Directly after this, the lines were extended to meet the horizon and car camera.
 
 ![alt text][hough_transform_extended]
 
-However, this still left behind multiple lines per lane line. To remedy this, the lines belonging to the left and right sides of the lane were aggregated and averaged componentwise by their coordinate points (i.e. all x1's were averaged against each other, all y2's against each other, etc.). Since their slopes were similar, the resultant average line for both sides would be nearly parallel to the original lines from which it was derived.
+However, this still left behind multiple lines per lane line. To remedy this, the lines belonging to the left and right sides of the lane were aggregated and averaged componentwise by their coordinate points (i.e. all x1's were averaged against each other, all y2's against each other, etc.). Since their slopes of lines on their respective sides were similar, the resultant average line for both sides would be nearly parallel to the original lines from which they were derived. At this point, we have a complete mask of the lines for each side of the lane, with only one line per side. Thickness of each line was also enhanced so that it could envelope the lane markings in the end result.
+
+![alt text][hough_transform_complete]
+
+Finally, this mask of the lane lines is simply overlayed on top of the original RGB image to yield the digestible graphic we desired. A weighted sum is done between the original image and the Hough transform mask, with the mask having a slightly smaller weight (simulating transparency). The end result is shown below:
+
+![alt text][end_result]
+
+
+### Adaptation to Video Data
+
+As you may notice, the pipeline operates on individual images. However, since videos are sequences of images (frames), the pipeline also functions as expected on videos by simply passing each frame to the function then re-rendering in sequence into an output video. The result of this is in the linked Jupyter notebook.
+
+
+## Challenges and Flaws
+
+The pipeline as it is now has several flaws that are easily revealed in the challenge video. One major challenge that I could tell from the onset would be curved roads. In such roads, the Hough transform as it is now may flat out fail to detect lines, or detect incorrect ones. This, combined with a non-general region of interest proposal, leads to incorrect lane line prediction, and the intersection of the lane lines seen in the challenge's output video. Another, more subtle challenge also revealed by the challenge video was the method's susceptibility to differences in lighting conditions. At several points in the video, lane markings are enveloped in shadows, causing them to sometimes go undetected by the edge detector. This leads to short blips in which no lane line is predicted at all.
+
+## Future work and Potential improvements
+
+An almost guaranteed improvement to the curved road challenge is the use of deep learning-based methods to detect lane markings. The pipeline's major flaw is that the majority of it, from the region of interest to the edge detector's thresholding, relies heavily on hand-crafted features and hyperparameters to work well. If this could be generalized and automated, the pipeline would have a much higher success rate on a wider variety of roads.
+
+For the lighting issue, a potential remedy could be a widening of the acceptance threshold used by the Canny edge detector. However, I fear this may also introduce many more unwanted artifiacts (objects other than lane lines) if expanded too much, which is why I believe a DL model would also help in this area much more than hand-crafted tuning could.

@@ -84,48 +84,40 @@ def draw_lines(image, lines, color = [255, 0, 0], thickness = 2):
     right_lines = []
 
     for line in lines:
-        
+
         for x1, y1, x2, y2 in line:
 
             slope = (y2 - y1) / (x2 - x1) if x2 - x1 != 0 else np.inf
 
-            if abs(slope) < 5 and abs(slope) > 0.5:
-                
-                top_intersect = point_of_intersection((x1, y1, x2, y2), top)
-                bot_intersect = point_of_intersection((x1, y1, x2, y2), bottom)
-                cv2.line(image, top_intersect, bot_intersect, color, thickness)
-            #cv2.line(image, top_intersect, bot_intersect, color, thickness)
-    #         slope = (y2 - y1) / (x2 - x1) if x2 - x1 != 0 else np.inf
+            # only include lines that have slopes characteristic of typical lane lines
 
-    #         # only include lines that have slopes characteristic of typical lane lines
+            # points seem to be ordered left to right, so...
 
-    #         # points seem to be ordered left to right, so...
+            # left lines have a positive slope
+            if slope < 5 and slope > 0.5:
+                left_lines.append((x1, y1, x2, y2))
 
-    #         # left lines have a positive slope
-    #         if slope < 5 and slope > 0.5:
-    #             left_lines.append((x1, y1, x2, y2))
-
-    #         # while right lines have a negative slope
-    #         if slope > -5 and slope < -0.5:
-    #             right_lines.append((x1, y1, x2, y2))
+            # while right lines have a negative slope
+            if slope > -5 and slope < -0.5:
+                right_lines.append((x1, y1, x2, y2))
     
-    # num_left = len(left_lines)
-    # num_right = len(right_lines)
+    num_left = len(left_lines)
+    num_right = len(right_lines)
 
-    # avg_left = [k // num_left for k in [sum(x) for x in zip(*left_lines)]]
-    # avg_right = [k // num_right for k in [sum(x) for x in zip(*right_lines)]]
+    avg_left = [k // num_left for k in [sum(x) for x in zip(*left_lines)]]
+    avg_right = [k // num_right for k in [sum(x) for x in zip(*right_lines)]]
 
-    # #print(len(avg_left))
-    # #print(len(avg_right))
+    #print(len(avg_left))
+    #print(len(avg_right))
 
-    # # find intersections with the "top" and "bottom" of the lane to extend the detected lines
+    # find intersections with the "top" and "bottom" of the lane to extend the detected lines
 
-    # for line in [avg_left, avg_right]:
+    for line in [avg_left, avg_right]:
 
-    #     if len(line) == 4:
-    #         top_intersect = point_of_intersection(tuple(line), top)
-    #         bot_intersect = point_of_intersection(tuple(line), bottom)
-    #         cv2.line(image, top_intersect, bot_intersect, color, thickness)
+        if len(line) == 4:
+            top_intersect = point_of_intersection(tuple(line), top)
+            bot_intersect = point_of_intersection(tuple(line), bottom)
+            cv2.line(image, top_intersect, bot_intersect, color, thickness)
 
             # print("Intersection with top: ", top_intersect)
             # print("Intersection with bottom: ", bot_intersect)
@@ -141,7 +133,7 @@ def hough_transform(image, rho, theta, threshold, min_line_len, max_line_gap):
 
     lines = cv2.HoughLinesP(image, rho, theta, threshold, np.array([]), minLineLength = min_line_len, maxLineGap = max_line_gap)
     line_image = np.zeros((image.shape[0], image.shape[1], 3), dtype = np.uint8)
-    draw_lines(line_image, lines, thickness = 2)
+    draw_lines(line_image, lines, thickness = 15)
 
     return line_image
 
@@ -173,10 +165,10 @@ def detect_lane_lines(image):
     masked_edges = region_of_interest(edges, mask_vertices)
 
     line_image = hough_transform(masked_edges, rho = 1, theta = np.pi / 180, threshold = 15, min_line_len = 20, max_line_gap = 20)
-    plt.imsave("assets/hough_transform_extended.jpg", line_image)
-    sys.exit()
+    #plt.imsave("assets/hough_transform_complete.jpg", line_image)
+    
     color_image_with_lines = weighted_image(line_image, image)
-
+    plt.imsave("assets/end_result.jpg", color_image_with_lines)
     #print("Original image: ")
     #plt.imshow(image)
     #plt.show()
