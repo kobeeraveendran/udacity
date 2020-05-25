@@ -74,24 +74,30 @@ def dir_threshold(image, sobel_kernel = 3, thresh = (0, np.pi / 2)):
 if __name__ == "__main__":
     ksize = 3
     gradx = abs_sobel_thresh(image, orient = 'x', sobel_kernel = ksize, thresh = (20, 100))
-    grady = abs_sobel_thresh(image, orient = 'x', sobel_kernel = ksize, thresh = (20, 100))
+    grady = abs_sobel_thresh(image, orient = 'y', sobel_kernel = ksize, thresh = (20, 100))
 
     mag_binary = mag_thresh(image, sobel_kernel = ksize, mag_thresh = (30, 100))
 
     dir_binary = dir_threshold(image, sobel_kernel = 15, thresh = (0.7, 1.3))
 
-    print("Sobel X")
-    plt.imshow(gradx, cmap = "gray")
-    plt.show()
+    # print("Sobel X")
+    # plt.imshow(gradx, cmap = "gray")
+    # plt.show()
 
-    print("Sobel Y")
-    plt.imshow(grady, cmap = "gray")
-    plt.show()
+    # print("Sobel Y")
+    # plt.imshow(grady, cmap = "gray")
+    # plt.show()
 
-    print("Binary magnitude")
-    plt.imshow(mag_binary, cmap = "gray")
-    plt.show()
+    # print("Binary magnitude")
+    # plt.imshow(mag_binary, cmap = "gray")
+    # plt.show()
 
-    print("Binary direction")
-    plt.imshow(dir_binary, cmap = "gray")
+    # print("Binary direction")
+    # plt.imshow(dir_binary, cmap = "gray")
+    # plt.show()
+
+    combined = np.zeros_like(dir_binary)
+    combined[((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))] = 1
+
+    plt.imshow(combined, cmap = "gray")
     plt.show()
