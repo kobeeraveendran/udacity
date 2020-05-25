@@ -12,8 +12,8 @@ def mag_thresh(image, sobel_kernel = 3, mag_thresh = (0, 255)):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
     # calculate gradients in x and y directions
-    sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0)
-    sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1)
+    sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize = sobel_kernel)
+    sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize = sobel_kernel)
 
     # calculate magnitude
     magnitude = np.sqrt(sobel_x ** 2 + sobel_y ** 2)
