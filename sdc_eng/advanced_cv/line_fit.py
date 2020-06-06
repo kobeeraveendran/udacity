@@ -63,17 +63,15 @@ def find_lane_pixels(image):
         #left_end = (leftx_current + margin, y_coord + window_height)
         #right_end = (rightx_current + margin, y_coord + window_height)
 
-        cv2.rectangle(out_image, (xleft_low, y_coord_low), (xleft_high, y_coord_high), color = (255, 0, 0), thickness = 2)
-        cv2.rectangle(out_image, (xright_low, y_coord_low), (xright_high, y_coord_high), color = (255, 0, 0), thickness = 2)
+        cv2.rectangle(out_image, (xleft_low, y_coord_low), (xleft_high, y_coord_high), color = (0, 255, 0), thickness = 2)
+        cv2.rectangle(out_image, (xright_low, y_coord_low), (xright_high, y_coord_high), color = (0, 255, 0), thickness = 2)
 
         #plt.imshow(out_image)
 
-        curr_window = ((xleft_low, y_coord_low), (xleft_high, y_coord_high))
-
         #good_left_inds = nonzerox[(nonzerox >= xleft_low) & (nonzerox <= xleft_high)]
 
-        good_left_inds = ((nonzerox >= xleft_low) & (nonzerox <= xleft_high) & (nonzeroy >= y_coord_low) & (nonzeroy <= y_coord_high)).nonzero()[0]
-        good_right_inds = ((nonzerox >= xright_low) & (nonzerox <= xright_high) & (nonzeroy >= y_coord_low) & (nonzeroy <= y_coord_high)).nonzero()[0]
+        good_left_inds = ((nonzerox >= xleft_low) & (nonzerox < xleft_high) & (nonzeroy >= y_coord_low) & (nonzeroy < y_coord_high)).nonzero()[0]
+        good_right_inds = ((nonzerox >= xright_low) & (nonzerox < xright_high) & (nonzeroy >= y_coord_low) & (nonzeroy < y_coord_high)).nonzero()[0]
 
         #print("good left indices: ", good_left_inds)
         #print("good left indices shape: ", good_left_inds.shape)
@@ -84,6 +82,15 @@ def find_lane_pixels(image):
         left_lane_indices.append(good_left_inds)
         right_lane_indices.append(good_right_inds)
 
+        if len(good_left_inds) > min_pixels:
+            leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
+
+        if len(good_right_inds) > min_pixels:
+            rightx_current = np.int(np.mean(nonzerox[good_right_inds]))
+
+    left_lane_indices = np.concatenate(left_lane_indices)
+    right_lane_indices = np.concatenate(right_lane_indices)
+
     leftx = nonzerox[left_lane_indices]
     lefty = nonzeroy[left_lane_indices]
     rightx = nonzerox[right_lane_indices]
@@ -93,4 +100,29 @@ def find_lane_pixels(image):
 
 def fit_polynomial(binary_warped):
 
-    
+    leftx, lefty, rightx, righty, out_image = find_lane_pixels(binary_warped)
+
+    left_fit = np.polyfit(lefty, leftx, deg = 2)
+    right_fit = np.polyfit(righty, rightx, deg = 2)
+
+    ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
+
+    left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
+    right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
+
+    # viz
+    out_image[lefty, leftx] = [255, 0, 0]
+    out_image[righty, rightx] = [0, 0, 255]
+
+    plt.plot(left_fitx, ploty, color = 'yellow')
+    plt.plot(right_fitx, ploty, color = 'yellow')
+
+    return out_image
+
+
+if __name__ == "__main__":
+    image = mpimg.imread("warped-example.jpg")
+
+    out_image = fit_polynomial(image)
+    plt.imshow(out_image)
+    plt.show()
