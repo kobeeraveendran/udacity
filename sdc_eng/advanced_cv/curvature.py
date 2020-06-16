@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def generate_data():
+def generate_data(ym_per_pix, xm_per_pix):
     '''
     Generates fake data to use for calculating lane curvature.
     In your own project, you'll ignore this function and instead
@@ -26,21 +26,24 @@ def generate_data():
 
 
     # Fit a second order polynomial to pixel positions in each fake lane line
-    left_fit = np.polyfit(ploty, leftx, 2)
-    right_fit = np.polyfit(ploty, rightx, 2)
+    # additionally, adjust to real-world curvature rather than pixel-space curvature
+    left_fit = np.polyfit(ploty * ym_per_pix, leftx * xm_per_pix, 2)
+    right_fit = np.polyfit(ploty * ym_per_pix, rightx * xm_per_pix, 2)
     
     return ploty, left_fit, right_fit
 
 def measure_curvature_pixels():
-    ploty, left_fit, right_fit = generate_data()
+
+    ym_per_pix = 30 / 720
+    xm_per_pix = 3.7 / 700
+
+    ploty, left_fit, right_fit = generate_data(ym_per_pix, xm_per_pix)
 
     y_eval = np.max(ploty)
+    y_eval *= ym_per_pix
 
-    left_curve_rad = np.power((1 + np.power(2 * left_fit[0] * y_eval + left_fit[1], 2)), 3 / 2) / np.abs(2 * left_fit[0])
-    right_curve_rad = np.power((1 + np.power(2 * right_fit[0] * y_eval + right_fit[1], 2)), 3 / 2) / np.abs(2 * right_fit[0])
-
-    #left_curve_rad = ((1 + (2 * left_fit[0] + ploty + left_fit[1]) ** 2) ** (3 / 2)) / np.abs(2 * left_fit[0])
-    #right_curve_rad = ((1 + (2 * right_fit[0] + ploty + right_fit[1]) ** 2) ** (3 / 2)) / np.abs(2 * right_fit[0])
+    left_curve_rad = ((1 + (2 * left_fit[0] * y_eval + left_fit[1]) ** 2) ** (3 / 2)) / abs(2 * left_fit[0])
+    right_curve_rad = ((1 + (2 * right_fit[0] * y_eval + right_fit[1]) ** 2) ** (3 / 2)) / abs(2 * right_fit[0])
 
     return left_curve_rad, right_curve_rad
 
@@ -48,7 +51,8 @@ if __name__ == "__main__":
 
     left_curverad, right_curverad = measure_curvature_pixels()
 
-    # expected: 1625.06, 1976.30
+    # pixel-space expected: 1625.06, 1976.30
+    # real-world space expected: 533.75, 648.16
     print(left_curverad, right_curverad)
 
     # plt.xlim(0, 1280)
